@@ -1,0 +1,3 @@
+<img src="vp-arch-example-vod-stream.png" alt="AWS architecture diagram" />
+
+AWS architecture diagram showing a media streaming workflow. The flow begins with a User who can publish and subscribe to content through AWS Stage service. The process continues through a VirtualParticipant ECS Task that contains several components in sequence: Stage Manager (which accesses stage media), MediaStream Manager, User-defined code, and finally connects to the user's S3 Bucket. An ECS Task component is highlighted at the bottom of the diagram. Arrows indicate the directional flow of data between each service component.
