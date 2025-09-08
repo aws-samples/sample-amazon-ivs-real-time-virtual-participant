@@ -1,0 +1,17 @@
+node_modules
+coverage
+build
+dist
+.env
+repolinter-results.*
+
+logs
+*.log
+*.local
+npm-debug.log*
+
+.DS_Store
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
