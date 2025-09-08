@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "dist",
+    "lib": ["ES2022"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Node10",
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "sourceMap": false,
+    "strictPropertyInitialization": false,
+    "inlineSources": true,
+    "inlineSourceMap": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "noErrorTruncation": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": false,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "@constants": ["lib/constants"],
+      "@constructs": ["lib/constructs"],
+      "@extensions": ["lib/extensions"],
+      "@lambda/*": ["lambda/*"],
+      "@policies": ["lib/policies"],
+      "@stacks": ["lib/stacks"],
+      "@typings/*": ["typings/*.types.ts"],
+      "@utils/*": ["lib/utils/*.utils.ts"]
+    }
+  },
+  "exclude": [
+    "**/node_modules",
+    "**/build",
+    "**/dist",
+    "cdk.out",
+    "eslint.config.js"
+  ],
+  "references": [
+    { "path": "./virtualparticipant/tsconfig.json" },
+    { "path": "./virtualparticipant/tsconfig.node.json" }
+  ]
+}

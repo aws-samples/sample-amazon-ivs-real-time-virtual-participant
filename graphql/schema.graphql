@@ -1,0 +1,102 @@
+type VirtualParticipant {
+  id: ID! @aws_api_key @aws_iam
+  status: VirtualParticipantStatus! @aws_api_key @aws_iam
+  tasks: [Task] @aws_api_key @aws_iam
+  running: String @aws_api_key @aws_iam
+  stageArn: String! @aws_api_key @aws_iam
+  stageEndpoints: StageEndpoints @aws_api_key @aws_iam
+  taskId: String! @aws_api_key @aws_iam
+  updatedAt: String! @aws_api_key @aws_iam
+  assetName: String! @aws_api_key @aws_iam
+  lastUpdateSource: String! @aws_api_key @aws_iam
+}
+
+type StageEndpoints {
+  whip: String @aws_api_key @aws_iam
+  events: String @aws_api_key @aws_iam
+}
+
+enum VirtualParticipantStatus {
+  PENDING
+  RUNNING
+  STOPPED
+  PROVISIONING
+  DEPROVISIONING
+  INVITED
+  JOINED
+  ERRORED
+  KICKED
+  AVAILABLE
+}
+
+type Task {
+  id: ID! @aws_api_key @aws_iam
+  state: TaskState! @aws_api_key @aws_iam
+}
+
+enum TaskState {
+  PENDING
+  RUNNING
+  STOPPED
+}
+
+type Stage {
+  id: ID!
+  name: String
+  participants: [String]
+  publicKey: String
+}
+
+type Query {
+  getVirtualParticipant(id: ID!): VirtualParticipant
+  getAllVirtualParticipants: [VirtualParticipant]
+  getStage(id: ID!): Stage
+}
+
+type Mutation {
+  updateVirtualParticipantState(input: VPStateInput!): VirtualParticipant
+    @aws_api_key
+    @aws_iam
+  updateTaskState(input: TaskStateInput!): Task @aws_api_key @aws_iam
+  updateStage(input: StageInput!): Stage @aws_api_key @aws_iam
+}
+
+type Subscription {
+  onVirtualParticipantStateChanged(id: ID!): VirtualParticipant
+    @aws_subscribe(mutations: ["updateVirtualParticipantState"])
+    @aws_api_key
+    @aws_iam
+  onStageChanged(id: ID!): Stage
+    @aws_subscribe(mutations: ["updateStage"])
+    @aws_api_key
+    @aws_iam
+}
+
+input VPStateInput {
+  id: ID!
+  status: VirtualParticipantStatus!
+  running: String
+  stageArn: String
+  stageEndpoints: StageEndpointsInput
+  taskId: String
+  updatedAt: String
+  assetName: String
+  lastUpdateSource: String
+}
+
+input StageEndpointsInput {
+  whip: String
+  events: String
+}
+
+input TaskStateInput {
+  id: ID!
+  state: TaskState!
+}
+
+input StageInput {
+  id: ID!
+  name: String
+  participants: [String]
+  publicKey: String
+}
