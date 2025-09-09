@@ -2,12 +2,13 @@
 
 This demo provides a sample implementation for a containerized virtual participant that can join an [Amazon IVS Real-time](https://docs.aws.amazon.com/ivs/latest/RealTimeUserGuide/what-is.html) stage, subscribe to content from other participants in the stage, and publish content to the stage as well. The container consists of a Node.js server context and [Puppeteer](https://github.com/puppeteer/puppeteer) client context that communicate via a WebSocket IPC. The client context uses the IVS Web Broadcast SDK to connect to an IVS Real-time stage.
 
+<img src="docs/images/app-screenshot.png" aria-hidden="true" alt="Preview image." style="display: none;" />
+
 <img src="docs/images/vp-arch-overview.png" alt="AWS architecture diagram showing a cloud-based application workflow. The diagram contains multiple AWS services connected by arrows indicating data flow." />
 
 [Diagram description](docs/images/vp-arch-overview-description.md).
 
-> [!CAUTION]
-> **Use at Your Own Risk**: This is a code sample designed to help developers get started with Amazon IVS. It is not production-ready and will require additional development work to be suitable for production use. It is **not** intended for production use as-is. Its primary goal is to help developers understand the concepts and capabilities of Amazon IVS. By using this solution, you understand and accept its risks and limitations.
+> [!CAUTION] > **Use at Your Own Risk**: This is a code sample designed to help developers get started with Amazon IVS. It is not production-ready and will require additional development work to be suitable for production use. It is **not** intended for production use as-is. Its primary goal is to help developers understand the concepts and capabilities of Amazon IVS. By using this solution, you understand and accept its risks and limitations.
 
 ## Deploying the application to AWS
 
