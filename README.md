@@ -4,11 +4,10 @@ This demo provides a sample implementation for a containerized virtual participa
 
 <img src="docs/images/app-screenshot.png" aria-hidden="true" alt="Preview image." style="display: none;" />
 
-<img src="docs/images/vp-arch-overview.png" alt="AWS architecture diagram showing a cloud-based application workflow. The diagram contains multiple AWS services connected by arrows indicating data flow." />
+[View full diagram and description](docs/images/vp-arch-overview-description.md).
 
-[Diagram description](docs/images/vp-arch-overview-description.md).
-
-> [!CAUTION] > **Use at Your Own Risk**: This is a code sample designed to help developers get started with Amazon IVS. It is not production-ready and will require additional development work to be suitable for production use. It is **not** intended for production use as-is. Its primary goal is to help developers understand the concepts and capabilities of Amazon IVS. By using this solution, you understand and accept its risks and limitations.
+> [!CAUTION]
+> **Use at Your Own Risk**: This is a code sample designed to help developers get started with Amazon IVS. It is not production-ready and will require additional development work to be suitable for production use. It is **not** intended for production use as-is. Its primary goal is to help developers understand the concepts and capabilities of Amazon IVS. By using this solution, you understand and accept its risks and limitations.
 
 ## Deploying the application to AWS
 
