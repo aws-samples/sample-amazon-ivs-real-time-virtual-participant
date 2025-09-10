@@ -32,7 +32,6 @@ import {
   aws_logs as logs,
   aws_s3 as s3,
   aws_secretsmanager as sm,
-  aws_sns as sns,
   aws_ssm as ssm,
   CfnOutput,
   Duration,
@@ -74,8 +73,6 @@ class VirtualParticipantStack extends Stack {
 
   readonly alarmActions: cwActions.SnsAction[] = [];
 
-  private static __alarmTopic?: sns.Topic;
-
   constructor(
     scope: Construct,
     id: string,
@@ -90,7 +87,7 @@ class VirtualParticipantStack extends Stack {
     // ========== TELEMETRY ==========
 
     const logsBucket = new SecureBucket(this, 'LogsBucket', {
-      bucketName: createResourceName(this, 'Logs'),
+      bucketName: createResourceName(this, 'Logs', 63, true),
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       objectOwnership: s3.ObjectOwnership.OBJECT_WRITER, // objectOwnership must be set to "ObjectWriter" when accessControl is "LogDeliveryWrite"
@@ -107,7 +104,7 @@ class VirtualParticipantStack extends Stack {
     // ========== VIDEO ASSETS BUCKET ==========
 
     const videoAssetsBucket = new SecureBucket(this, 'VideoAssetsBucket', {
-      bucketName: createResourceName(this, 'VideoAssets'),
+      bucketName: createResourceName(this, 'VideoAssets', 63, true),
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       intelligentTieringConfigurations: [

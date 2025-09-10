@@ -1,10 +1,53 @@
 import { Stack } from 'aws-cdk-lib';
 import crypto from 'crypto';
 
-function createResourceName(stack: Stack, id: string, maxLength?: number) {
+function createResourceName(
+  stack: Stack,
+  id: string,
+  maxLength?: number,
+  addUuid?: boolean
+) {
   let name = `${stack.stackName}-${id}`;
 
-  if (maxLength && name.length > maxLength) {
+  if (addUuid) {
+    const fullUuid = crypto.randomUUID();
+    const nameWithFullUuid = `${name}-${fullUuid}`;
+
+    if (maxLength && nameWithFullUuid.length > maxLength) {
+      // Calculate how much space we have for the UUID after base name and dashes
+      const baseNameLength = name.length + 1; // +1 for the dash before UUID
+      const availableUuidLength = maxLength - baseNameLength;
+
+      if (availableUuidLength > 0) {
+        // Use a shortened UUID that fits within constraints
+        const shortenedUuid = fullUuid.substring(0, availableUuidLength);
+        name = `${name}-${shortenedUuid}`;
+      } else {
+        // If even a minimal UUID won't fit, truncate stackName and keep id intact
+        const minUuidLength = 8; // Minimum UUID length for reasonable uniqueness
+        const requiredLength = id.length + minUuidLength + 2; // +2 for two dashes
+        const maxStackNameLength = maxLength - requiredLength;
+
+        if (maxStackNameLength > 0) {
+          const truncatedStackName = stack.stackName.slice(
+            0,
+            maxStackNameLength
+          );
+          const shortUuid = fullUuid.substring(0, minUuidLength);
+          name = `${truncatedStackName}-${id}-${shortUuid}`;
+        } else {
+          // If still can't fit, use minimal stackName and shortest possible UUID
+          const shortUuid = fullUuid.substring(
+            0,
+            Math.max(4, maxLength - id.length - 3)
+          );
+          name = `${stack.stackName.slice(0, 1)}-${id}-${shortUuid}`;
+        }
+      }
+    } else {
+      name = nameWithFullUuid;
+    }
+  } else if (maxLength && name.length > maxLength) {
     const truncName = name.slice(0, maxLength - 5);
     const hash = crypto
       .createHash('shake256', { outputLength: 2 })
