@@ -18,6 +18,8 @@ Before continuing, ensure you have installed the following tools:
 - [AWS CLI Version 2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - [Node.js](https://nodejs.org/en/) v20 and `npm` (npm is usually installed with Node.js)
   - If you have [node version manager](https://github.com/nvm-sh/nvm) installed, run `nvm use` to sync your node version with this project
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) - Required for building the containerized virtual participant
+  - Ensure Docker Desktop is running on your system before deployment
 
 For configuration specifics, refer to the [AWS CLI User Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
