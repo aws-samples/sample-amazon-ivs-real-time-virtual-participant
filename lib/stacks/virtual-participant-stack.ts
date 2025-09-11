@@ -590,36 +590,6 @@ class VirtualParticipantStack extends Stack {
       resourcePath: ['stage', 'token']
     });
 
-    const createPlayerTokenLambda = new LambdaFunction(
-      this,
-      'CreatePlayerToken',
-      {
-        entry: getLambdaEntryPath('createPlayerToken'),
-        functionName: createResourceName(this, 'CreatePlayerToken'),
-        description: 'Creates a stage token for the given stage.',
-        logRetention: logs.RetentionDays.ONE_MONTH,
-        memorySize: 512,
-        environment: {
-          STAGES_TABLE_NAME: stagesTable.tableName,
-          RUNNING_INDEX_NAME: this.runningIndexName,
-          PRIVATE_KEY_SECRET_ARN: privateKeySecret.secretArn,
-          PUBLIC_KEY_ARN_PARAM_NAME: publicKeyArnParam.parameterName
-        }
-      }
-    );
-    stagesTable.grantReadData(createPlayerTokenLambda);
-    privateKeySecret.grantRead(createPlayerTokenLambda);
-    publicKeyArnParam.grantRead(createPlayerTokenLambda);
-
-    const createPlayerTokenAlias =
-      createPlayerTokenLambda.configureProvisionedConcurrency({
-        minCapacity: this.isDev ? 1 : 10
-      });
-    this.addAPILambdaProxy(createPlayerTokenAlias, {
-      httpMethod: 'POST',
-      resourcePath: ['token', 'create']
-    });
-
     const inviteVpLambda = new LambdaFunction(this, 'InviteVp', {
       entry: getLambdaEntryPath('inviteVp'),
       functionName: createResourceName(this, 'InviteVp'),
