@@ -714,6 +714,22 @@ class VirtualParticipantStack extends Stack {
       authType: lambda.FunctionUrlAuthType.AWS_IAM
     });
 
+    const listStagesLambda = new LambdaFunction(this, 'ListStages', {
+      entry: getLambdaEntryPath('listStages'),
+      functionName: createResourceName(this, 'ListStages'),
+      description: 'Lists all stages from the DynamoDB table.',
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      memorySize: 512,
+      environment: {
+        STAGES_TABLE_NAME: stagesTable.tableName
+      }
+    });
+    stagesTable.grantReadData(listStagesLambda);
+
+    const listStagesLambdaUrl = listStagesLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.AWS_IAM
+    });
+
     // ========== VIRTUAL PARTICIPANT ==========
 
     const updateVpStateLambda = new LambdaFunction(this, 'UpdateVpState', {
@@ -883,6 +899,10 @@ class VirtualParticipantStack extends Stack {
     new CfnOutput(this, 'ListVpsLambdaURL', {
       value: listVpsLambdaUrl.url,
       exportName: createExportName(this, 'ListVpsLambdaURL')
+    });
+    new CfnOutput(this, 'ListStagesLambdaURL', {
+      value: listStagesLambdaUrl.url,
+      exportName: createExportName(this, 'ListStagesLambdaURL')
     });
   }
 
