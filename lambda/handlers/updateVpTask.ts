@@ -49,11 +49,16 @@ async function handler(
         status: lastStatus,
         stageArn,
         stageEndpoints,
-        ...(!!ttl && { ttl }),
+        lastUpdateSource: 'ecs-task-state-change',
+        ...(ttl !== undefined && { ttl }),
         ...(isRunning && { running: 'yes' })
       },
       attrsToRemove: isRunning ? [] : ['running']
     });
+
+    console.info(
+      `Updated VP ${vpRecord.id} status to ${lastStatus}${ttl !== undefined ? ` with TTL ${ttl}` : ''} (source: ecs-task-state-change)`
+    );
   } catch (error) {
     console.error('Failed to update virtual participant', error);
   }

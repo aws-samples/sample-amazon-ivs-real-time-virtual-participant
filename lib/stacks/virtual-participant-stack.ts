@@ -669,6 +669,35 @@ class VirtualParticipantStack extends Stack {
       authType: lambda.FunctionUrlAuthType.AWS_IAM
     });
 
+    const stopVpTasksLambda = new LambdaFunction(this, 'StopVpTasks', {
+      entry: getLambdaEntryPath('stopVpTasks'),
+      functionName: createResourceName(this, 'StopVpTasks'),
+      description: 'Stops all running Virtual Participant ECS tasks.',
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      timeout: Duration.minutes(5),
+      memorySize: 512,
+      vpc: this.vpc,
+      securityGroups: [this.sg],
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      environment: {
+        VP_TABLE_NAME: virtualParticipantTable.tableName,
+        STATE_INDEX_NAME: this.stateIndexName,
+        CLUSTER_NAME: cluster.clusterName
+      },
+      initialPolicy: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ecs:StopTask'],
+          resources: ['*']
+        })
+      ]
+    });
+    virtualParticipantTable.grantReadWriteData(stopVpTasksLambda);
+
+    const stopVpTasksLambdaUrl = stopVpTasksLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.AWS_IAM
+    });
+
     // ========== VIRTUAL PARTICIPANT ==========
 
     const updateVpStateLambda = new LambdaFunction(this, 'UpdateVpState', {
@@ -830,6 +859,10 @@ class VirtualParticipantStack extends Stack {
     new CfnOutput(this, 'KickVpLambdaURL', {
       value: kickVpLambdaUrl.url,
       exportName: createExportName(this, 'KickVpLambdaURL')
+    });
+    new CfnOutput(this, 'StopVpTasksLambdaURL', {
+      value: stopVpTasksLambdaUrl.url,
+      exportName: createExportName(this, 'StopVpTasksLambdaURL')
     });
   }
 

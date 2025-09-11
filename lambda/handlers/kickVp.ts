@@ -51,6 +51,10 @@ async function handler(
         lastUpdateSource: 'kick-api'
       }
     });
+
+    console.info(
+      `Successfully kicked VP: ${existingVpRecord.id} with TTL: ${ttl} (source: kick-api)`
+    );
   } catch (error) {
     return createErrorResponse({
       error: new Error('Failed to invite virtual participant.', {
