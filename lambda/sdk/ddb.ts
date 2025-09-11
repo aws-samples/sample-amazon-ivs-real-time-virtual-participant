@@ -158,6 +158,16 @@ async function getAllVpRecordsByStatus(statuses: string[]) {
   return Items.map((item) => unmarshall(item) as VpRecord);
 }
 
+async function getAllVpRecords() {
+  const { Items = [] } = await ddbDocClient.send(
+    new ScanCommand({
+      TableName: process.env.VP_TABLE_NAME
+    })
+  );
+
+  return Items.map((item) => unmarshall(item) as VpRecord);
+}
+
 async function createVpRecord(vpRecord: VpRecord) {
   await ddbDocClient.send(
     new PutItemCommand({
@@ -286,6 +296,7 @@ export {
   createStageRecord,
   createVpRecord,
   deleteStageRecord,
+  getAllVpRecords,
   getAllVpRecordsByStatus,
   getStageRecord,
   queryVpRecordByStageId,

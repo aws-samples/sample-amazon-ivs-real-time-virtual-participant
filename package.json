@@ -27,6 +27,7 @@
     "deleteStage": "tsx scripts/deleteStage.ts",
     "inviteVp": "tsx scripts/inviteVp.ts",
     "kickVp": "tsx scripts/kickVp.ts",
+    "listVps": "tsx scripts/listVps.ts",
     "stopVps": "tsx scripts/stopVps.ts"
   },
   "dependencies": {
