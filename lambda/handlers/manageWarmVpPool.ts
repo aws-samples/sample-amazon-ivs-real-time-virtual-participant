@@ -110,7 +110,7 @@ async function stopExcessAvailableVps(
       });
 
       console.info(
-        `Successfully stopped excess VP ${index + 1}/${vpsToStop.length}: ${vp.id}`
+        `Successfully stopped excess VP ${index + 1}/${vpsToStop.length}: ${vp.id} with TTL: ${ttl} (source: warm-pool-manager)`
       );
     } catch (error) {
       console.error(

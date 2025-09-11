@@ -669,6 +669,67 @@ class VirtualParticipantStack extends Stack {
       authType: lambda.FunctionUrlAuthType.AWS_IAM
     });
 
+    const stopVpTasksLambda = new LambdaFunction(this, 'StopVpTasks', {
+      entry: getLambdaEntryPath('stopVpTasks'),
+      functionName: createResourceName(this, 'StopVpTasks'),
+      description: 'Stops all running Virtual Participant ECS tasks.',
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      timeout: Duration.minutes(5),
+      memorySize: 512,
+      vpc: this.vpc,
+      securityGroups: [this.sg],
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      environment: {
+        VP_TABLE_NAME: virtualParticipantTable.tableName,
+        STATE_INDEX_NAME: this.stateIndexName,
+        CLUSTER_NAME: cluster.clusterName
+      },
+      initialPolicy: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ecs:StopTask'],
+          resources: ['*']
+        })
+      ]
+    });
+    virtualParticipantTable.grantReadWriteData(stopVpTasksLambda);
+
+    const stopVpTasksLambdaUrl = stopVpTasksLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.AWS_IAM
+    });
+
+    const listVpsLambda = new LambdaFunction(this, 'ListVps', {
+      entry: getLambdaEntryPath('listVps'),
+      functionName: createResourceName(this, 'ListVps'),
+      description: 'Lists all virtual participants from the DynamoDB table.',
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      memorySize: 512,
+      environment: {
+        VP_TABLE_NAME: virtualParticipantTable.tableName
+      }
+    });
+    virtualParticipantTable.grantReadData(listVpsLambda);
+
+    const listVpsLambdaUrl = listVpsLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.AWS_IAM
+    });
+
+    const listStagesLambda = new LambdaFunction(this, 'ListStages', {
+      entry: getLambdaEntryPath('listStages'),
+      functionName: createResourceName(this, 'ListStages'),
+      description: 'Lists all stages from the DynamoDB table.',
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      memorySize: 512,
+      environment: {
+        STAGES_TABLE_NAME: stagesTable.tableName
+      }
+    });
+    stagesTable.grantReadData(listStagesLambda);
+
+    const listStagesLambdaUrl = listStagesLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.AWS_IAM
+    });
+
     // ========== VIRTUAL PARTICIPANT ==========
 
     const updateVpStateLambda = new LambdaFunction(this, 'UpdateVpState', {
@@ -830,6 +891,18 @@ class VirtualParticipantStack extends Stack {
     new CfnOutput(this, 'KickVpLambdaURL', {
       value: kickVpLambdaUrl.url,
       exportName: createExportName(this, 'KickVpLambdaURL')
+    });
+    new CfnOutput(this, 'StopVpTasksLambdaURL', {
+      value: stopVpTasksLambdaUrl.url,
+      exportName: createExportName(this, 'StopVpTasksLambdaURL')
+    });
+    new CfnOutput(this, 'ListVpsLambdaURL', {
+      value: listVpsLambdaUrl.url,
+      exportName: createExportName(this, 'ListVpsLambdaURL')
+    });
+    new CfnOutput(this, 'ListStagesLambdaURL', {
+      value: listStagesLambdaUrl.url,
+      exportName: createExportName(this, 'ListStagesLambdaURL')
     });
   }
 
