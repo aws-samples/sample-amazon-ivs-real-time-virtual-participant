@@ -73,4 +73,33 @@ async function signLambdaRequest(
   return [signedRequest, invokeUrl] as const;
 }
 
-export { getStackExport, signLambdaRequest };
+function getRelativeTime(dateString: string): string {
+  if (!dateString) return 'unknown';
+
+  const now = new Date();
+  const date = new Date(dateString);
+
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    console.warn(`Invalid date format: ${dateString}`);
+
+    return 'invalid date';
+  }
+
+  const diffMs = now.getTime() - date.getTime();
+
+  // Handle negative differences (future dates)
+  if (diffMs < 0) return 'in future';
+
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+
+  return `${days}d ago`;
+}
+
+export { getRelativeTime, getStackExport, signLambdaRequest };
