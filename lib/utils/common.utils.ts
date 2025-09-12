@@ -99,4 +99,38 @@ function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export { capitalize, createExportName, createResourceName, deepMerge };
+function createDeterministicBucketName(
+  stack: Stack,
+  resourceType: string,
+  maxLength = 63
+): string {
+  // Create a deterministic hash based on stack name, account, region, and resource type
+  const input = `${stack.stackName}-${stack.account}-${stack.region}-${resourceType}`;
+  const hash = crypto
+    .createHash('sha256')
+    .update(input)
+    .digest('hex')
+    .substring(0, 10); // Use first 10 characters for reasonable uniqueness
+
+  // Ensure the name fits within S3 bucket naming constraints
+  let baseName = `${stack.stackName}-${resourceType}`.toLowerCase();
+  const nameWithHash = `${baseName}-${hash}`;
+
+  if (nameWithHash.length > maxLength) {
+    // Truncate base name to fit within constraints
+    const availableLength = maxLength - hash.length - 1; // -1 for the dash
+    baseName = baseName.substring(0, availableLength);
+
+    return `${baseName}-${hash}`;
+  }
+
+  return nameWithHash;
+}
+
+export {
+  capitalize,
+  createDeterministicBucketName,
+  createExportName,
+  createResourceName,
+  deepMerge
+};
