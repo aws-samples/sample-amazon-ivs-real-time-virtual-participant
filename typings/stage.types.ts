@@ -28,6 +28,7 @@ interface JoinStageRequest {
   id: string;
   userId?: string;
   attributes?: Record<string, string>;
+  allowPublish?: boolean;
 }
 
 interface JoinStageResponse {
