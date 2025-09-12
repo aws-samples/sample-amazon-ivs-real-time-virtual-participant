@@ -5,16 +5,29 @@ import { JoinStageRequest, JoinStageResponse } from '@typings/stage';
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 
 async function handler(
-  event: APIGatewayProxyEventV2
+  event: APIGatewayProxyEventV2 | JoinStageRequest
 ): Promise<APIGatewayProxyResultV2> {
+  // Handle both API Gateway events and direct invocation
+  let requestData: JoinStageRequest;
+
+  if ('body' in event) {
+    // API Gateway event format
+    requestData = JSON.parse(event.body ?? '{}') as JoinStageRequest;
+  } else {
+    // Direct invocation format
+    requestData = event as JoinStageRequest;
+  }
+
   const {
     id,
     attributes,
-    userId = 'guest'
-  }: JoinStageRequest = JSON.parse(event.body ?? '{}');
+    userId = 'guest',
+    allowPublish = false
+  } = requestData;
   let response: JoinStageResponse;
 
   console.info('[EVENT]', JSON.stringify(event));
+  console.info('[REQUEST_DATA]', JSON.stringify(requestData));
 
   try {
     const stageRecord = await ddbSdk.getStageRecord(id);
@@ -30,7 +43,7 @@ async function handler(
     response = await realTimeSdk.createToken({
       userId,
       attributes,
-      allowPublish: false,
+      allowPublish,
       allowSubscribe: true,
       stageArn: stageRecord.stageArn,
       stageEndpoints: stageRecord.stageEndpoints

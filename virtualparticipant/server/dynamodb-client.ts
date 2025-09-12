@@ -3,6 +3,7 @@ import {
   DynamoDBClient,
   GetItemCommand,
   QueryCommand,
+  ScanCommand,
   UpdateItemCommand
 } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
@@ -16,6 +17,16 @@ interface VpRecord {
   participantId?: string;
   status: string;
   taskId: string;
+  createdAt: string;
+  updatedAt: string;
+  stageArn: string;
+  stageEndpoints: unknown;
+}
+
+interface StageRecord {
+  id: string;
+  hostParticipantId: string;
+  ttl?: string;
   createdAt: string;
   updatedAt: string;
   stageArn: string;
@@ -40,6 +51,7 @@ export class DynamoDBVpClient {
   private tableName: string;
   private tasksIndexName: string;
   private stateIndexName: string;
+  private stagesTableName: string;
 
   constructor() {
     const ddbClient = new DynamoDBClient({});
@@ -57,9 +69,14 @@ export class DynamoDBVpClient {
     this.tableName = process.env.VP_TABLE_NAME ?? '';
     this.tasksIndexName = process.env.TASKS_INDEX_NAME ?? 'TasksIndex';
     this.stateIndexName = process.env.STATE_INDEX_NAME ?? 'Status';
+    this.stagesTableName = process.env.STAGES_TABLE_NAME ?? '';
 
     if (!this.tableName) {
       throw new Error('VP_TABLE_NAME environment variable is required');
+    }
+
+    if (!this.stagesTableName) {
+      throw new Error('STAGES_TABLE_NAME environment variable is required');
     }
   }
 
@@ -191,6 +208,33 @@ export class DynamoDBVpClient {
       return Items.map((item) => unmarshall(item) as VpRecord);
     } catch (error) {
       console.error(`Error querying VP records by status ${status}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get stage record by stage ARN by scanning the stages table
+   * @param stageArn - The stage ARN to search for
+   * @returns Promise containing the stage record or null if not found
+   */
+  async getStageRecordByArn(stageArn: string): Promise<StageRecord | null> {
+    try {
+      const { Items = [] } = await this.ddbDocClient.send(
+        new ScanCommand({
+          TableName: this.stagesTableName,
+          FilterExpression: '#stageArn = :stageArn',
+          ExpressionAttributeNames: { '#stageArn': 'stageArn' },
+          ExpressionAttributeValues: { ':stageArn': convertToAttr(stageArn) }
+        })
+      );
+
+      if (Items.length > 0) {
+        return unmarshall(Items[0]) as StageRecord;
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error getting stage record by ARN ${stageArn}:`, error);
       throw error;
     }
   }

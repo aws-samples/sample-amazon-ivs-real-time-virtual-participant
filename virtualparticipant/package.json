@@ -19,6 +19,7 @@
     "@aws-sdk/client-appsync": "^3.846.0",
     "@aws-sdk/client-dynamodb": "^3.846.0",
     "@aws-sdk/client-ivs-realtime": "^3.846.0",
+    "@aws-sdk/client-lambda": "^3.887.0",
     "@aws-sdk/client-secrets-manager": "^3.846.0",
     "@aws-sdk/client-ssm": "^3.846.0",
     "@aws-sdk/credential-providers": "^3.846.0",

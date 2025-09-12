@@ -399,7 +399,8 @@ class VirtualParticipantStack extends Stack {
                 'dynamodb:GetItem',
                 'dynamodb:PutItem',
                 'dynamodb:Query',
-                'dynamodb:UpdateItem'
+                'dynamodb:UpdateItem',
+                'dynamodb:Scan'
               ],
               resources: [
                 virtualParticipantTable.tableArn,
@@ -412,11 +413,6 @@ class VirtualParticipantStack extends Stack {
         })
       }
     });
-    taskRole.addToPolicy(ivsPublicKeyPolicy);
-
-    // Grant ECS task role permissions to read secrets and parameters for token creation
-    privateKeySecret.grantRead(taskRole);
-    publicKeyArnParam.grantRead(taskRole);
 
     // Grant ECS task role READ access to the video assets bucket
     videoAssetsBucket.grantRead(taskRole);
@@ -457,11 +453,10 @@ class VirtualParticipantStack extends Stack {
         AWS_EMF_NAMESPACE: this.stackName,
         AWS_EMF_AGENT_ENDPOINT: 'tcp://127.0.0.1:25888',
         VP_TABLE_NAME: virtualParticipantTable.tableName,
+        STAGES_TABLE_NAME: stagesTable.tableName,
         TASKS_INDEX_NAME: this.tasksIndexName,
         STATE_INDEX_NAME: this.stateIndexName,
         GRAPHQL_API_URL: this.gqlApi.graphqlUrl,
-        PRIVATE_KEY_SECRET_ARN: privateKeySecret.secretArn,
-        PUBLIC_KEY_ARN_PARAM_NAME: publicKeyArnParam.parameterName,
         VIDEO_ASSETS_BUCKET_NAME: videoAssetsBucket.bucketName
       },
       ulimits: [
@@ -589,6 +584,14 @@ class VirtualParticipantStack extends Stack {
       httpMethod: 'POST',
       resourcePath: ['stage', 'token']
     });
+
+    // Grant ECS task role permission to invoke the createIvsParticipantToken lambda
+    createIvsParticipantTokenLambda.grantInvoke(taskRole);
+    // Add the lambda function ARN to the container environment
+    vpContainer.addEnvironment(
+      'CREATE_PARTICIPANT_TOKEN_LAMBDA_ARN',
+      createIvsParticipantTokenLambda.functionArn
+    );
 
     const inviteVpLambda = new LambdaFunction(this, 'InviteVp', {
       entry: getLambdaEntryPath('inviteVp'),
@@ -874,10 +877,6 @@ class VirtualParticipantStack extends Stack {
       value: listStagesLambdaUrl.url,
       exportName: createExportName(this, 'ListStagesLambdaURL')
     });
-  }
-
-  private get isDev() {
-    return this.appEnv === AppEnv.DEV;
   }
 
   private addAPILambdaProxy(

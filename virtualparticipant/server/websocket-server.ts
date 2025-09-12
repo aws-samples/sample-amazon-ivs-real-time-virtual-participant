@@ -7,7 +7,7 @@ import {
 } from '../src/types/virtual-participant.types';
 import { AppSyncSubscriber } from './appsync-subscriber';
 import { DynamoDBVpClient, VpStatus } from './dynamodb-client';
-import { ParticipantTokenService } from './participant-token';
+import { VirtualParticipantLambdaClient } from './lambda-client';
 import { downloadFileFromS3 } from './s3';
 
 // Types
@@ -22,7 +22,7 @@ export class VirtualParticipantWebSocketServer {
   private clients = new Map<string, ClientConnection>();
   private appSyncSubscriber: AppSyncSubscriber | null = null;
   private dynamoDbClient: DynamoDBVpClient | null = null;
-  private tokenService: ParticipantTokenService;
+  private lambdaClient: VirtualParticipantLambdaClient;
 
   constructor(port = 3001) {
     // Create WebSocket server
@@ -31,8 +31,8 @@ export class VirtualParticipantWebSocketServer {
       perMessageDeflate: false // Disable compression for real-time performance
     });
 
-    // Initialize token service
-    this.tokenService = new ParticipantTokenService();
+    // Initialize Lambda client for token creation
+    this.lambdaClient = new VirtualParticipantLambdaClient();
 
     // Initialize DynamoDB client if VP_TABLE_NAME is available
     console.info(
@@ -282,12 +282,31 @@ export class VirtualParticipantWebSocketServer {
               `VP ${vpId} was invited to stage ${vpInfo.stageArn}, creating participant token`
             );
 
-            // TODO: Invoke createPlayerToken lambda function instead
+            // Get the stage record to find the correct stage ID for the lambda
+            if (!this.dynamoDbClient) {
+              throw new Error('DynamoDB client not available for stage lookup');
+            }
+
+            console.info(`Looking up stage record for ARN: ${vpInfo.stageArn}`);
+            const stageRecord = await this.dynamoDbClient.getStageRecordByArn(
+              vpInfo.stageArn
+            );
+
+            if (!stageRecord) {
+              throw new Error(
+                `No stage record found for ARN: ${vpInfo.stageArn}`
+              );
+            }
+
+            console.info(
+              `Found stage record with ID: ${stageRecord.id} for ARN: ${vpInfo.stageArn}`
+            );
+
+            // Invoke createPlayerToken lambda function with proper stage ID
             const { token, participantId } =
-              await this.tokenService.createParticipantToken(
-                vpInfo.stageArn,
-                vpInfo.stageEndpoints,
-                vpId // Use VP ID as user ID
+              await this.lambdaClient.createParticipantToken(
+                stageRecord.id,
+                vpId
               );
 
             if (vpInfo.assetName) {
