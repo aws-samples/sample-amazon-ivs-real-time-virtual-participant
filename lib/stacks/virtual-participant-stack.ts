@@ -11,6 +11,7 @@ import {
 } from '@policies';
 import {
   capitalize,
+  createDeterministicBucketName,
   createExportName,
   createResourceName
 } from '@utils/common';
@@ -87,7 +88,7 @@ class VirtualParticipantStack extends Stack {
     // ========== TELEMETRY ==========
 
     const logsBucket = new SecureBucket(this, 'LogsBucket', {
-      bucketName: createResourceName(this, 'Logs', 63, true),
+      bucketName: createDeterministicBucketName(this, 'logs'),
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       objectOwnership: s3.ObjectOwnership.OBJECT_WRITER, // objectOwnership must be set to "ObjectWriter" when accessControl is "LogDeliveryWrite"
@@ -104,7 +105,7 @@ class VirtualParticipantStack extends Stack {
     // ========== VIDEO ASSETS BUCKET ==========
 
     const videoAssetsBucket = new SecureBucket(this, 'VideoAssetsBucket', {
-      bucketName: createResourceName(this, 'VideoAssets', 63, true),
+      bucketName: createDeterministicBucketName(this, 'videoassets'),
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       intelligentTieringConfigurations: [
