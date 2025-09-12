@@ -1,9 +1,8 @@
 {
-  "name": "amazon-ivs-virtual-participant",
+  "name": "samgple-amazon-ivs-real-time-virtual-participant",
   "version": "0.1.0",
-  "license": "UNLICENSED",
+  "license": "MIT-0",
   "author": "Sang Lee (lesang@amazon.com)",
-  "homepage": "https://gitlab.aws.dev/ivs-demos/amazon-ivs-virtual-participant",
   "bin": "bin/infra.js",
   "type": "module",
   "private": true,
