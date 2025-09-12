@@ -130,6 +130,60 @@ Removes a virtual participant from an IVS Real-Time stage.
 npm run kickVp -- IVSVirtualParticipant-dev -s st-abc123
 ```
 
+### List virtual participants
+
+```bash
+npm run listVps -- <stack-name>
+```
+
+Lists all virtual participants in the system, grouped by their current status.
+
+**Options:**
+
+- `<stack-name>`: Name of the stack deployed to an AWS account **(Required)**
+
+**Example:**
+
+```bash
+npm run listVps -- IVSVirtualParticipant-dev
+```
+
+### List stages
+
+```bash
+npm run listStages -- <stack-name>
+```
+
+Lists all IVS Real-Time stages in the system.
+
+**Options:**
+
+- `<stack-name>`: Name of the stack deployed to an AWS account **(Required)**
+
+**Example:**
+
+```bash
+npm run listStages -- IVSVirtualParticipant-dev
+```
+
+### Stop virtual participants
+
+```bash
+npm run stopVps -- <stack-name>
+```
+
+Stops all running virtual participant tasks. Once stopped, new tasks will automatically be spawned using the latest task definition based on the minimum number of warm tasks (default: 2) defined in the VP pool manager: `lambda/handlers/manageWarmVpPool.ts`.
+
+**Options:**
+
+- `<stack-name>`: Name of the stack deployed to an AWS account **(Required)**
+
+**Example:**
+
+```bash
+npm run stopVps -- IVSVirtualParticipant-dev
+```
+
 ### Rotate token key-pair
 
 This demo application uses a public/private key-pair to create and verify participant stage tokens.
