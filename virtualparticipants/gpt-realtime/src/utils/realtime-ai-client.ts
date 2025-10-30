@@ -361,10 +361,17 @@ export class RealtimeAIWebSocketClient {
     this.sessionReadyCallbacks = [];
 
     callbacks.forEach((callback) => {
-      try {
-        callback();
-      } catch (error) {
-        console.error('Error in session ready callback:', error);
+      if (typeof callback === 'function') {
+        try {
+          callback();
+        } catch (error) {
+          console.error('Error in session ready callback:', error);
+        }
+      } else {
+        console.error(
+          'Invalid callback type in sessionReadyCallbacks:',
+          typeof callback
+        );
       }
     });
 
