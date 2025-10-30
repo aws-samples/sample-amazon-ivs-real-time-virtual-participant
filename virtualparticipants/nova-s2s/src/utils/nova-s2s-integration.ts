@@ -47,6 +47,7 @@ class NovaS2SIntegration {
   private currentRole: 'assistant' | 'user' = 'assistant';
   private transcriptWordCount = 0;
   private readonly TRANSCRIPT_WORD_THRESHOLD = 4; // Send partial transcripts every 4 words
+  private lastSentTranscript = ''; // Track last sent transcript to prevent duplicates
 
   // Virtual Participant information for SEI messages
   private vpParticipantId = '';
@@ -576,6 +577,40 @@ class NovaS2SIntegration {
   }
 
   /**
+   * Check if text is a control message (JSON format) that should not be sent as transcript
+   */
+  private isControlMessage(text: string): boolean {
+    // Trim whitespace
+    const trimmed = text.trim();
+
+    // Check if it looks like JSON
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+      return false;
+    }
+
+    // Try to parse as JSON
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      // Check for known control message patterns
+      if (parsed.interrupted !== undefined) {
+        console.info(
+          '[SEI Transcript] Detected control message (interrupted), skipping'
+        );
+
+        return true;
+      }
+
+      // TODO: Add more control messages here as needed
+
+      return false;
+    } catch (_e) {
+      // Not valid JSON, treat as regular text
+      return false;
+    }
+  }
+
+  /**
    * Reset transcript accumulation for new responses
    */
   private resetTranscriptAccumulation(): void {
@@ -598,6 +633,23 @@ class NovaS2SIntegration {
     role: 'assistant' | 'user'
   ): void {
     if (!text || !this.seiTranscriptSender) {
+      return;
+    }
+
+    // Filter out control messages (like { "interrupted": true })
+    if (this.isControlMessage(text)) {
+      console.info('[SEI Transcript] Skipping control message');
+
+      return;
+    }
+
+    // Check for duplicate transcripts when marked as final
+    // This happens when Nova S2S re-sends a previous response after an interruption
+    if (isFinal && text === this.lastSentTranscript) {
+      console.info(
+        `[SEI Transcript] Skipping duplicate final transcript: "${text}"`
+      );
+
       return;
     }
 
@@ -719,6 +771,9 @@ class NovaS2SIntegration {
     console.info(
       `[SEI Transcript] Sent complete transcript (${this.currentTranscript.length} chars): "${this.currentTranscript}"`
     );
+
+    // Track this transcript to prevent duplicates
+    this.lastSentTranscript = this.currentTranscript;
 
     // Reset after sending complete transcript
     this.currentTranscript = '';

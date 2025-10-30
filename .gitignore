@@ -8,6 +8,7 @@ repolinter-results.*
 logs
 *.log
 *.local
+_local/
 npm-debug.log*
 
 .DS_Store
