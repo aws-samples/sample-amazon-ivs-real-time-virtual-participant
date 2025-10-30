@@ -198,7 +198,7 @@ export class RealtimeAIWebSocketClient {
       default: {
         // Forward to registered handlers
         const handler = this.messageHandlers.get(message.type);
-        if (handler) {
+        if (typeof handler === 'function') {
           handler(message);
         } else {
           console.info('Unhandled message type:', message.type, message);
