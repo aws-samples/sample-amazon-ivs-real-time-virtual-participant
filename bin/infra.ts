@@ -15,9 +15,27 @@ const app = new App();
 // Runtime context config
 const appEnv: AppEnv = app.node.tryGetContext('appEnv');
 const stackName: string = app.node.tryGetContext('stackName');
+const virtualParticipant: string =
+  app.node.tryGetContext('virtualParticipant') || 'asset-publisher';
 const globalConfig: Partial<Config> = app.node.tryGetContext('global');
 const appEnvConfig: Partial<Config> = app.node.tryGetContext(appEnv);
-const config = deepMerge(globalConfig, appEnvConfig) as Config;
+
+// Check if enablePublicApi is passed as a context parameter
+const enablePublicApiContext = app.node.tryGetContext('enablePublicApi');
+let contextOverrides: Partial<Config> = {};
+if (enablePublicApiContext !== undefined) {
+  // Convert string 'true'/'false' to boolean if needed
+  contextOverrides = {
+    enablePublicApi:
+      enablePublicApiContext === 'true' || enablePublicApiContext === true
+  } as Partial<Config>;
+}
+
+const config = deepMerge(
+  globalConfig,
+  appEnvConfig,
+  contextOverrides
+) as Config;
 
 // Environment
 const account = process.env.AWS_ACCOUNT ?? process.env.CDK_DEFAULT_ACCOUNT;
@@ -35,5 +53,6 @@ new VirtualParticipantStack(app, stackName, {
   tags,
   appEnv,
   config,
+  virtualParticipant,
   terminationProtection: appEnv === AppEnv.PROD
 });

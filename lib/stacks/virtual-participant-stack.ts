@@ -15,6 +15,7 @@ import {
   createExportName,
   createResourceName
 } from '@utils/common';
+import { extractEcsEnvVars } from '@utils/ecs';
 import { getLambdaEntryPath } from '@utils/lambda';
 import {
   Aspects,
@@ -49,12 +50,15 @@ import { AppEnv, Config } from 'typings/config.types';
 interface VirtualParticipantStackProps extends StackProps {
   readonly appEnv: AppEnv;
   readonly config: Config;
+  readonly virtualParticipant?: string;
 }
 
 class VirtualParticipantStack extends Stack {
   readonly appEnv: AppEnv;
 
   readonly config: Config;
+
+  readonly virtualParticipant: string;
 
   readonly sg: ec2.SecurityGroup;
 
@@ -84,6 +88,23 @@ class VirtualParticipantStack extends Stack {
     const { config } = props;
     this.appEnv = props.appEnv;
     this.config = props.config;
+
+    // Get VP type from props or context, default to asset-publisher
+    this.virtualParticipant =
+      props.virtualParticipant ??
+      this.node.tryGetContext('virtualParticipant') ??
+      'asset-publisher';
+
+    // Validate VP type
+    const validVpTypes = ['asset-publisher', 'gpt-realtime', 'nova-s2s'];
+    if (!validVpTypes.includes(this.virtualParticipant)) {
+      throw new Error(
+        `Invalid virtual participant type: ${this.virtualParticipant}. ` +
+          `Must be one of: ${validVpTypes.join(', ')}`
+      );
+    }
+
+    console.info(`🎯 Building Virtual Participant: ${this.virtualParticipant}`);
 
     // ========== TELEMETRY ==========
 
@@ -418,6 +439,22 @@ class VirtualParticipantStack extends Stack {
     // Grant ECS task role READ access to the video assets bucket
     videoAssetsBucket.grantRead(taskRole);
 
+    // Add Bedrock permissions for nova-s2s VP type
+    if (this.virtualParticipant === 'nova-s2s') {
+      taskRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'bedrock:InvokeModelWithResponseStream',
+            'bedrock:InvokeModel'
+          ],
+          resources: [
+            `arn:aws:bedrock:*::foundation-model/amazon.nova-sonic-v1:0`
+          ]
+        })
+      );
+    }
+
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef', {
       taskRole,
       executionRole,
@@ -431,8 +468,11 @@ class VirtualParticipantStack extends Stack {
     });
 
     const vpImage = ecs.ContainerImage.fromAsset(
-      path.join(import.meta.dirname, '../../virtualparticipant'),
-      { platform: ecrAssets.Platform.LINUX_AMD64 }
+      path.join(import.meta.dirname, '../../virtualparticipants'),
+      {
+        platform: ecrAssets.Platform.LINUX_AMD64,
+        file: `${this.virtualParticipant}/Dockerfile`
+      }
     );
     const vpLogging = new ecs.AwsLogDriver({
       streamPrefix: this.stackName,
@@ -442,24 +482,64 @@ class VirtualParticipantStack extends Stack {
     const vpLinuxParams = new ecs.LinuxParameters(this, 'LinuxParams', {
       initProcessEnabled: true
     });
+
+    // Extract ECS_* prefixed environment variables from .env
+    const ecsEnvVars = extractEcsEnvVars();
+
+    // Validate required environment variables for specific VP types
+    if (this.virtualParticipant === 'gpt-realtime') {
+      if (
+        !ecsEnvVars.ECS_OPENAI_API_KEY ||
+        ecsEnvVars.ECS_OPENAI_API_KEY.trim() === ''
+      ) {
+        throw new Error(
+          `ECS_OPENAI_API_KEY environment variable is required when deploying the gpt-realtime virtual participant. ` +
+            `Please set this variable in your .env file.`
+        );
+      }
+    }
+
+    // Set up base container environment
+    const containerEnvironment: Record<string, string> = {
+      VP_TYPE: this.virtualParticipant,
+      TINI_SUBREAPER: '1',
+      AWS_EMF_ENVIRONMENT: 'ECS',
+      AWS_EMF_NAMESPACE: this.stackName,
+      AWS_EMF_AGENT_ENDPOINT: 'tcp://127.0.0.1:25888',
+      VP_TABLE_NAME: virtualParticipantTable.tableName,
+      STAGES_TABLE_NAME: stagesTable.tableName,
+      TASKS_INDEX_NAME: this.tasksIndexName,
+      STATE_INDEX_NAME: this.stateIndexName,
+      GRAPHQL_API_URL: this.gqlApi.graphqlUrl,
+      VIDEO_ASSETS_BUCKET_NAME: videoAssetsBucket.bucketName
+    };
+
+    // Add Nova S2S specific environment variables
+    if (this.virtualParticipant === 'nova-s2s') {
+      containerEnvironment.AWS_REGION = this.region;
+      // Default to us-east-1 for Bedrock API calls as Nova Sonic is currently available there
+      containerEnvironment.BEDROCK_REGION =
+        ecsEnvVars.ECS_BEDROCK_REGION || 'us-east-1';
+      containerEnvironment.NOVA_MODEL_ID =
+        ecsEnvVars.ECS_NOVA_MODEL_ID || 'amazon.nova-sonic-v1:0';
+      containerEnvironment.NOVA_VOICE_ID =
+        ecsEnvVars.ECS_NOVA_VOICE_ID || 'matthew';
+      containerEnvironment.NOVA_SYSTEM_PROMPT =
+        ecsEnvVars.ECS_NOVA_SYSTEM_PROMPT ||
+        'You are a helpful AI assistant in a video conversation. Be conversational, friendly, and engaging.';
+    }
+
+    if (this.virtualParticipant === 'gpt-realtime') {
+      containerEnvironment.OPENAI_API_KEY = ecsEnvVars.ECS_OPENAI_API_KEY;
+    }
+
     const vpContainer = taskDefinition.addContainer('VpContainer', {
       image: vpImage,
       logging: vpLogging,
       linuxParameters: vpLinuxParams,
       containerName: createResourceName(this, 'VpContainer'),
       portMappings: [{ hostPort: 80, containerPort: 80 }],
-      environment: {
-        TINI_SUBREAPER: '1',
-        AWS_EMF_ENVIRONMENT: 'ECS',
-        AWS_EMF_NAMESPACE: this.stackName,
-        AWS_EMF_AGENT_ENDPOINT: 'tcp://127.0.0.1:25888',
-        VP_TABLE_NAME: virtualParticipantTable.tableName,
-        STAGES_TABLE_NAME: stagesTable.tableName,
-        TASKS_INDEX_NAME: this.tasksIndexName,
-        STATE_INDEX_NAME: this.stateIndexName,
-        GRAPHQL_API_URL: this.gqlApi.graphqlUrl,
-        VIDEO_ASSETS_BUCKET_NAME: videoAssetsBucket.bucketName
-      },
+      environment: containerEnvironment,
       ulimits: [
         { name: ecs.UlimitName.NOFILE, hardLimit: 1048576, softLimit: 1048576 }
       ]
@@ -516,9 +596,18 @@ class VirtualParticipantStack extends Stack {
     privateKeySecret.grantRead(createIvsStageLambda);
     publicKeyArnParam.grantRead(createIvsStageLambda);
 
-    const createIvsStageLambdaUrl = createIvsStageLambda.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.AWS_IAM
-    });
+    // Conditionally expose via API Gateway or Lambda Function URL
+    let createIvsStageLambdaUrl: lambda.FunctionUrl | undefined;
+    if (config.enablePublicApi) {
+      this.addAPILambdaProxy(createIvsStageLambda, {
+        httpMethod: 'POST',
+        resourcePath: ['stage', 'create']
+      });
+    } else {
+      createIvsStageLambdaUrl = createIvsStageLambda.addFunctionUrl({
+        authType: lambda.FunctionUrlAuthType.AWS_IAM
+      });
+    }
 
     // Lambda function that deletes a stage, removes it from dynamodb
     const deleteIvsStageLambda = new LambdaFunction(this, 'DeleteIvsStage', {
@@ -551,9 +640,18 @@ class VirtualParticipantStack extends Stack {
     privateKeySecret.grantRead(deleteIvsStageLambda);
     publicKeyArnParam.grantRead(deleteIvsStageLambda);
 
-    const deleteIvsStageLambdaUrl = deleteIvsStageLambda.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.AWS_IAM
-    });
+    // Conditionally expose via API Gateway or Lambda Function URL
+    let deleteIvsStageLambdaUrl: lambda.FunctionUrl | undefined;
+    if (config.enablePublicApi) {
+      this.addAPILambdaProxy(deleteIvsStageLambda, {
+        httpMethod: 'POST',
+        resourcePath: ['stage', 'delete']
+      });
+    } else {
+      deleteIvsStageLambdaUrl = deleteIvsStageLambda.addFunctionUrl({
+        authType: lambda.FunctionUrlAuthType.AWS_IAM
+      });
+    }
 
     // Lambda function that creates a ParticipantToken for a stage
     const createIvsParticipantTokenLambda = new LambdaFunction(
@@ -616,9 +714,18 @@ class VirtualParticipantStack extends Stack {
     publicKeyArnParam.grantRead(inviteVpLambda);
     videoAssetsBucket.grantRead(inviteVpLambda);
 
-    const inviteVpLambdaUrl = inviteVpLambda.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.AWS_IAM
-    });
+    // Conditionally expose via API Gateway or Lambda Function URL
+    let inviteVpLambdaUrl: lambda.FunctionUrl | undefined;
+    if (config.enablePublicApi) {
+      this.addAPILambdaProxy(inviteVpLambda, {
+        httpMethod: 'POST',
+        resourcePath: ['stage', 'invite']
+      });
+    } else {
+      inviteVpLambdaUrl = inviteVpLambda.addFunctionUrl({
+        authType: lambda.FunctionUrlAuthType.AWS_IAM
+      });
+    }
 
     const kickVpLambda = new LambdaFunction(this, 'KickVp', {
       entry: getLambdaEntryPath('kickVp'),
@@ -639,9 +746,18 @@ class VirtualParticipantStack extends Stack {
     privateKeySecret.grantRead(kickVpLambda);
     publicKeyArnParam.grantRead(kickVpLambda);
 
-    const kickVpLambdaUrl = kickVpLambda.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.AWS_IAM
-    });
+    // Conditionally expose via API Gateway or Lambda Function URL
+    let kickVpLambdaUrl: lambda.FunctionUrl | undefined;
+    if (config.enablePublicApi) {
+      this.addAPILambdaProxy(kickVpLambda, {
+        httpMethod: 'POST',
+        resourcePath: ['stage', 'kick']
+      });
+    } else {
+      kickVpLambdaUrl = kickVpLambda.addFunctionUrl({
+        authType: lambda.FunctionUrlAuthType.AWS_IAM
+      });
+    }
 
     const stopVpTasksLambda = new LambdaFunction(this, 'StopVpTasks', {
       entry: getLambdaEntryPath('stopVpTasks'),
@@ -850,22 +966,47 @@ class VirtualParticipantStack extends Stack {
       value: videoAssetsBucket.bucketName,
       exportName: createExportName(this, 'VideoAssetsBucketName')
     });
-    new CfnOutput(this, 'CreateIvsStageLambdaURL', {
-      value: createIvsStageLambdaUrl.url,
-      exportName: createExportName(this, 'CreateIvsStageLambdaURL')
-    });
-    new CfnOutput(this, 'DeleteIvsStageLambdaURL', {
-      value: deleteIvsStageLambdaUrl.url,
-      exportName: createExportName(this, 'DeleteIvsStageLambdaURL')
-    });
-    new CfnOutput(this, 'InviteVpLambdaURL', {
-      value: inviteVpLambdaUrl.url,
-      exportName: createExportName(this, 'InviteVpLambdaURL')
-    });
-    new CfnOutput(this, 'KickVpLambdaURL', {
-      value: kickVpLambdaUrl.url,
-      exportName: createExportName(this, 'KickVpLambdaURL')
-    });
+
+    // Output API Gateway URL when public API is enabled
+    if (config.enablePublicApi) {
+      new CfnOutput(this, 'PublicApiUrl', {
+        value: this.httpApi.url,
+        exportName: createExportName(this, 'PublicApiUrl'),
+        description: 'Public API Gateway URL for Lambda functions'
+      });
+    }
+
+    // Output Lambda Function URLs when public API is disabled
+    if (!config.enablePublicApi) {
+      if (createIvsStageLambdaUrl) {
+        new CfnOutput(this, 'CreateIvsStageLambdaURL', {
+          value: createIvsStageLambdaUrl.url,
+          exportName: createExportName(this, 'CreateIvsStageLambdaURL')
+        });
+      }
+
+      if (deleteIvsStageLambdaUrl) {
+        new CfnOutput(this, 'DeleteIvsStageLambdaURL', {
+          value: deleteIvsStageLambdaUrl.url,
+          exportName: createExportName(this, 'DeleteIvsStageLambdaURL')
+        });
+      }
+
+      if (inviteVpLambdaUrl) {
+        new CfnOutput(this, 'InviteVpLambdaURL', {
+          value: inviteVpLambdaUrl.url,
+          exportName: createExportName(this, 'InviteVpLambdaURL')
+        });
+      }
+
+      if (kickVpLambdaUrl) {
+        new CfnOutput(this, 'KickVpLambdaURL', {
+          value: kickVpLambdaUrl.url,
+          exportName: createExportName(this, 'KickVpLambdaURL')
+        });
+      }
+    }
+
     new CfnOutput(this, 'StopVpTasksLambdaURL', {
       value: stopVpTasksLambdaUrl.url,
       exportName: createExportName(this, 'StopVpTasksLambdaURL')

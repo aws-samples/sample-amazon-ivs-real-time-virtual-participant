@@ -5,10 +5,12 @@
       "vpc": { "maxAzs": 3, "natGateways": 1 }
     },
     "dev": {
-      "enablePublicIP": true
+      "enablePublicIP": true,
+      "enablePublicApi": false
     },
     "prod": {
-      "enablePublicIP": false
+      "enablePublicIP": false,
+      "enablePublicApi": false
     },
 
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
