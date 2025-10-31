@@ -3,6 +3,10 @@
 
 # Configurable environment variables
 #
+# - VP: virtual participant type to deploy
+#       options: asset-publisher | gpt-realtime
+#       default: asset-publisher
+#
 # - AWS_PROFILE: named AWS CLI profile used to deploy the stack
 #								 default: none (default profile is used)
 #
@@ -13,13 +17,17 @@
 #				 options: dev | prod
 #				 default: dev
 
-# Conguration options
-STACK			 ?= IVSVirtualParticipant-$(ENV)
-ENV				 ?= dev
+# Configuration options
+VP           ?= asset-publisher
+STACK        ?= IVSVirtualParticipant-$(ENV)
+ENV          ?= dev
+PUBLIC_API   ?= false
 
 CDK_OPTIONS = $(if $(AWS_PROFILE), --profile $(AWS_PROFILE)) \
-					  	--context stackName=$(STACK) \
-						 	--context appEnv=$(ENV)
+              --context stackName=$(STACK) \
+              --context appEnv=$(ENV) \
+              --context virtualParticipant=$(VP) \
+              --context enablePublicApi=$(PUBLIC_API)
 
 help: ## Shows this help message
 	@echo "\n$$(tput bold)Available Rules:$$(tput sgr0)\n"
@@ -32,21 +40,27 @@ help: ## Shows this help message
 	@echo "If AWS_PROFILE is not exported as an environment variable or provided through the command line, then the default AWS profile is used. \n" | fold -s
 	@echo "   Option 1: export AWS_PROFILE=<profile>\n"
 	@echo "   Option 2: AWS_PROFILE=<profile> make <target>\n"
+	@echo "\n$$(tput bold)Virtual Participant Selection:$$(tput sgr0)\n"
+	@echo "To deploy a specific virtual participant type:\n"
+	@echo "   VP=asset-publisher make deploy  (default)\n"
+	@echo "   VP=gpt-realtime make deploy\n"
 
 app: install bootstrap deploy ## Installs NPM dependencies, bootstraps, and deploys the stack
 
 install: ## Installs NPM dependencies
 	@echo "📦 Installing root NPM dependencies..."
 	@npm install
-	@echo "\n📦 Installing virtualparticipant NPM dependencies..."
-	@npm install --prefix virtualparticipant
+	@echo "\n📦 Installing common library dependencies..."
+	@npm install --prefix virtualparticipants/common
+	@echo "\n📦 Installing $(VP) NPM dependencies..."
+	@npm install --prefix virtualparticipants/$(VP)
 
 bootstrap: guard-ENV guard-STACK ## Deploys the CDK Toolkit staging stack
 	@echo "🥾 Bootstrapping..."
 	npx cdk bootstrap $(CDK_OPTIONS)
 
 deploy: guard-ENV guard-STACK ## Deploys the stack
-	@echo "🚀 Deploying $(STACK)..."
+	@echo "🚀 Deploying $(STACK) with $(VP)..."
 	npx cdk deploy $(STACK) $(CDK_OPTIONS)
 
 output: guard-ENV guard-STACK ## Retrieves the CloudFormation stack outputs
@@ -54,11 +68,11 @@ output: guard-ENV guard-STACK ## Retrieves the CloudFormation stack outputs
 	aws cloudformation describe-stacks --stack-name $(STACK) --query 'Stacks[].Outputs' --output=text
 
 synth: guard-ENV guard-STACK ## Synthesizes the CDK app and produces a cloud assembly in cdk.out
-	@echo "🧪 Synthesizing $(STACK)..."
+	@echo "🧪 Synthesizing $(STACK) with $(VP)..."
 	npx cdk synth $(STACK) $(CDK_OPTIONS)
 
 diff: guard-ENV guard-STACK ## Compares the current version of a stack (and its dependencies) with the already-deployed version
-	@echo "🧩 Diffing $(STACK)..."
+	@echo "🧩 Diffing $(STACK) with $(VP)..."
 	npx cdk diff $(STACK) $(CDK_OPTIONS)
 
 destroy: guard-ENV guard-STACK clean ## Destroys the stack and cleans up
@@ -67,7 +81,9 @@ destroy: guard-ENV guard-STACK clean ## Destroys the stack and cleans up
 
 clean: ## Deletes the build, dist and cloud assembly (cdk.out) directories
 	@echo "🧹 Cleaning..."
-	rm -rf dist cdk.out virtualparticipant/build virtualparticipant/dist
+	rm -rf dist cdk.out virtualparticipants/common/dist
+	rm -rf virtualparticipants/asset-publisher/build virtualparticipants/asset-publisher/dist
+	rm -rf virtualparticipants/gpt-realtime/build virtualparticipants/gpt-realtime/dist
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \

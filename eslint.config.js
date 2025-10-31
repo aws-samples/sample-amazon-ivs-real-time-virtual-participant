@@ -16,7 +16,16 @@ const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const config = tseslint.config(
-  { ignores: ['**/node_modules', '**/build', '**/dist', 'cdk.out', '**/*.md'] },
+  {
+    ignores: [
+      '**/node_modules',
+      '**/build',
+      '**/dist',
+      'cdk.out',
+      '**/*.md',
+      '**/_local'
+    ]
+  },
 
   {
     files: ['**/*.{js,ts}'],
@@ -131,13 +140,49 @@ const config = tseslint.config(
     }
   },
 
-  // Configure virtualparticipant-specific language options
+  // Configure virtualparticipants subdirectories with their own tsconfig files
   {
-    files: ['virtualparticipant/**/*.{js,ts}'],
+    files: ['virtualparticipants/gpt-realtime/**/*.{js,ts}'],
     languageOptions: {
       parserOptions: {
-        tsconfigRootDir: path.resolve(__dirname, 'virtualparticipant'),
+        tsconfigRootDir: path.resolve(
+          __dirname,
+          'virtualparticipants/gpt-realtime'
+        ),
         project: ['./tsconfig.json', './tsconfig.node.json']
+      }
+    }
+  },
+  {
+    files: ['virtualparticipants/asset-publisher/**/*.{js,ts}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: path.resolve(
+          __dirname,
+          'virtualparticipants/asset-publisher'
+        ),
+        project: ['./tsconfig.json', './tsconfig.node.json']
+      }
+    }
+  },
+  {
+    files: ['virtualparticipants/nova-s2s/**/*.{js,ts}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: path.resolve(
+          __dirname,
+          'virtualparticipants/nova-s2s'
+        ),
+        project: ['./tsconfig.json', './tsconfig.node.json']
+      }
+    }
+  },
+  {
+    files: ['virtualparticipants/common/**/*.{js,ts}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: path.resolve(__dirname, 'virtualparticipants/common'),
+        project: './tsconfig.json'
       }
     }
   },

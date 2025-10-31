@@ -18,7 +18,17 @@ const [stackName] = positionals;
 if (!stackName) throw new Error('Stack name not provided.');
 
 const credentialsProvider = defaultProvider();
-const cloudFormationClient = new CloudFormationClient();
+
+// Get region from environment or config
+const region = process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION;
+if (!region) {
+  throw new Error(
+    'AWS region is not configured. Please set the AWS_REGION or AWS_DEFAULT_REGION environment variable, or configure it in your AWS CLI profile.\n\n' +
+      'Example: AWS_REGION=us-east-1 npm run stopVps -- <stack-name>'
+  );
+}
+
+const cloudFormationClient = new CloudFormationClient({ region });
 
 async function getStackExport(key: string) {
   const dsCommand = new DescribeStacksCommand({ StackName: stackName });

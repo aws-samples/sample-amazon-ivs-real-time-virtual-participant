@@ -8,6 +8,7 @@ repolinter-results.*
 logs
 *.log
 *.local
+_local/
 npm-debug.log*
 
 .DS_Store
@@ -15,3 +16,7 @@ npm-debug.log*
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# CDK context should normally be committed, but since this is a public repository
+# we have chosen to omit it
+cdk.context.json

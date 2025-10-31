@@ -5,7 +5,7 @@
     "lib": ["ES2022"],
     "target": "ES2022",
     "module": "ES2022",
-    "moduleResolution": "Node10",
+    "moduleResolution": "Bundler",
     "strict": true,
     "allowJs": true,
     "checkJs": true,
@@ -42,13 +42,17 @@
   },
   "exclude": [
     "**/node_modules",
+    "**/_local",
     "**/build",
     "**/dist",
     "cdk.out",
     "eslint.config.js"
   ],
   "references": [
-    { "path": "./virtualparticipant/tsconfig.json" },
-    { "path": "./virtualparticipant/tsconfig.node.json" }
+    { "path": "./virtualparticipants/common/tsconfig.json" },
+    { "path": "./virtualparticipants/asset-publisher/tsconfig.json" },
+    { "path": "./virtualparticipants/asset-publisher/tsconfig.node.json" },
+    { "path": "./virtualparticipants/gpt-realtime/tsconfig.json" },
+    { "path": "./virtualparticipants/gpt-realtime/tsconfig.node.json" }
   ]
 }
