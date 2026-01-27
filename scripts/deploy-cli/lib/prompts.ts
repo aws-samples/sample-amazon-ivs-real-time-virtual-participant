@@ -68,6 +68,10 @@ export async function promptDeploymentConfig(
         {
           name: 'nova-s2s - Amazon Nova Sonic speech-to-speech AI participant',
           value: 'nova-s2s'
+        },
+        {
+          name: 'realtime-captioner - Real-time captioning/transcription participant',
+          value: 'realtime-captioner'
         }
       ],
       default: previousConfig?.virtualParticipant ?? 'asset-publisher'

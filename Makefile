@@ -4,7 +4,7 @@
 # Configurable environment variables
 #
 # - VP: virtual participant type to deploy
-#       options: asset-publisher | gpt-realtime
+#       options: asset-publisher | gpt-realtime | nova-s2s | realtime-captioner
 #       default: asset-publisher
 #
 # - AWS_PROFILE: named AWS CLI profile used to deploy the stack
@@ -44,6 +44,8 @@ help: ## Shows this help message
 	@echo "To deploy a specific virtual participant type:\n"
 	@echo "   VP=asset-publisher make deploy  (default)\n"
 	@echo "   VP=gpt-realtime make deploy\n"
+	@echo "   VP=nova-s2s make deploy\n"
+	@echo "   VP=realtime-captioner make deploy\n"
 
 app: install bootstrap deploy ## Installs NPM dependencies, bootstraps, and deploys the stack
 
@@ -84,6 +86,8 @@ clean: ## Deletes the build, dist and cloud assembly (cdk.out) directories
 	rm -rf dist cdk.out virtualparticipants/common/dist
 	rm -rf virtualparticipants/asset-publisher/build virtualparticipants/asset-publisher/dist
 	rm -rf virtualparticipants/gpt-realtime/build virtualparticipants/gpt-realtime/dist
+	rm -rf virtualparticipants/nova-s2s/build virtualparticipants/nova-s2s/dist
+	rm -rf virtualparticipants/realtime-captioner/build virtualparticipants/realtime-captioner/dist
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \

@@ -96,7 +96,12 @@ class VirtualParticipantStack extends Stack {
       'asset-publisher';
 
     // Validate VP type
-    const validVpTypes = ['asset-publisher', 'gpt-realtime', 'nova-s2s'];
+    const validVpTypes = [
+      'asset-publisher',
+      'gpt-realtime',
+      'nova-s2s',
+      'realtime-captioner'
+    ];
     if (!validVpTypes.includes(this.virtualParticipant)) {
       throw new Error(
         `Invalid virtual participant type: ${this.virtualParticipant}. ` +

@@ -22,6 +22,7 @@ The virtual participant system uses a monorepo structure with shared components:
   - Lambda token provider for secure token management
 - **nova-s2s/** - Example real-time conversational virtual participant using Amazon Nova Sonic (Speech-to-Speech)
 - **gpt-realtime/** - Example real-time conversational virtual participant using gpt-realtime
+- **realtime-captioner/** - Example real-time captioning virtual participant that transcribes audio to text using the Web Audio SpeechRecognition API.
 - **asset-publisher/** - Example asset-based virtual participant that publishes pre-recorded media
 
 Each implementation shares the common server utilities while maintaining its own client application logic.
@@ -162,6 +163,10 @@ Container logs are sent to the ECS task and can be observed in the ECS service c
    cd virtualparticipants/gpt-realtime
    npm install
    
+   # For realtime-captioner
+   cd virtualparticipants/realtime-captioner
+   npm install
+   
    # For asset-publisher
    cd virtualparticipants/asset-publisher
    npm install
@@ -176,7 +181,7 @@ Container logs are sent to the ECS task and can be observed in the ECS service c
 
 ## Building Docker Images
 
-The virtual participant containers use a monorepo structure with a shared `common` module. When building the Docker images, you must use the `virtualparticipants/` directory as the build context.
+The virtual participant containers use a monorepo structure with a shared `common` module. Run these from the repository roo, so that the `virtualparticipants/` directory is used as the build context.
 
 ### Build nova-s2s container
 
@@ -188,6 +193,12 @@ docker build --platform linux/amd64 -t virtualparticipant-nova -f virtualpartici
 
 ```bash
 docker build --platform linux/amd64 -t virtualparticipant-gpt -f virtualparticipants/gpt-realtime/Dockerfile virtualparticipants/
+```
+
+### Build realtime-captioner container
+
+```bash
+docker build --platform linux/amd64 -t virtualparticipant-captioner -f virtualparticipants/realtime-captioner/Dockerfile virtualparticipants/
 ```
 
 ### Build asset-publisher container
@@ -239,6 +250,20 @@ docker run --init -it -p 80:80 \
 - `PARTICIPANT_TOKENS`: IVS stage participant token (required)
 - `OPENAI_API_KEY`: OpenAI API key for GPT-Realtime access (required)
 
+### Realtime-Captioner Container
+
+The Realtime-Captioner example can be run with just a participant token:
+
+```bash
+docker run --init -it -p 80:80 \
+  -e PARTICIPANT_TOKENS="<PARTICIPANT_TOKEN_HERE>" \
+  --platform linux/amd64 \
+  virtualparticipant-captioner:latest
+```
+
+**Environment Variables:**
+- `PARTICIPANT_TOKENS`: IVS stage participant token (required)
+
 ### Asset-Publisher Container
 
 The Asset-Publisher container publishes pre-recorded media and requires minimal configuration:
@@ -272,6 +297,10 @@ docker run --init -it -p 80:80 \
    cd virtualparticipants/gpt-realtime
    npm start
    
+   # For realtime-captioner
+   cd virtualparticipants/realtime-captioner
+   npm start
+   
    # For asset-publisher
    cd virtualparticipants/asset-publisher
    npm start
@@ -292,6 +321,10 @@ docker run --init -it -p 80:80 \
    
    # For gpt-realtime
    cd virtualparticipants/gpt-realtime
+   npx tsx server/websocket-server.ts
+   
+   # For realtime-captioner
+   cd virtualparticipants/realtime-captioner
    npx tsx server/websocket-server.ts
    
    # For asset-publisher
@@ -348,6 +381,23 @@ virtualparticipants/
 │   ├── scripts/                   # Utility scripts
 │   ├── pulse/                     # Audio system configuration
 │   ├── Dockerfile                 # Container definition
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── realtime-captioner/             # Realtime Captioner VP implementation
+│   ├── src/                       # Client application
+│   │   ├── main.ts               # Main entry point
+│   │   ├── stage/                # Stage management
+│   │   ├── processor/            # Media processing
+│   │   ├── internal/             # IVS client overrides
+│   │   ├── types/                # TypeScript definitions
+│   │   └── utils/                # Utility functions
+│   ├── server/                    # Server application
+│   │   └── websocket-server.ts  # WebSocket server
+│   ├── supervisor/               # Process management
+│   ├── scripts/                  # Utility scripts
+│   ├── pulse/                    # Audio system configuration
+│   ├── Dockerfile                # Container definition
 │   ├── package.json
 │   └── tsconfig.json
 │

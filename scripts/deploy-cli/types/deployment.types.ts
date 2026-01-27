@@ -2,7 +2,11 @@
  * Deployment configuration types for the CLI tool
  */
 
-export type VirtualParticipantType = 'asset-publisher' | 'gpt-realtime';
+export type VirtualParticipantType =
+  | 'asset-publisher'
+  | 'gpt-realtime'
+  | 'nova-s2s'
+  | 'realtime-captioner';
 export type EnvironmentType = 'dev' | 'prod';
 
 export interface DeploymentConfig {
