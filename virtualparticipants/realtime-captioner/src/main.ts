@@ -284,8 +284,10 @@ async function handleVpInvitation(vpInfo: VirtualParticipant): Promise<void> {
     })
     .catch((error) => {
       console.error(
-        `[handleVpInvitation] Failed to initialize stage for VP ${vpInfo.id}:`,
-        error
+        '%s',
+        `[handleVpInvitation] Failed to initialize stage for VP ${vpInfo.id}: ${String(
+          error
+        )}`
       );
 
       // Clean up on failure
@@ -347,7 +349,10 @@ function initializeWebSocket() {
     websocket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        console.info('Received WebSocket message: %O', message);
+        console.info(
+          '%s',
+          `Received WebSocket message: ${JSON.stringify(message)}`
+        );
 
         // Handle different message types from the server
         switch (message.type) {
