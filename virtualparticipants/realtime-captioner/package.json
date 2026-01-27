@@ -1,0 +1,26 @@
+{
+  "name": "realtime-captioner",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "amazon-ivs-web-broadcast": "^1.10.0",
+    "jwt-decode": "^4.0.0",
+    "@aws-sdk/client-dynamodb": "^3.709.0",
+    "@aws-sdk/lib-dynamodb": "^3.709.0",
+    "aws-embedded-metrics": "^4.2.0",
+    "puppeteer-core": "^23.11.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}

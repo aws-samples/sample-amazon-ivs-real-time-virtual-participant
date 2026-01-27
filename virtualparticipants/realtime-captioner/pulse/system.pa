@@ -1,0 +1,32 @@
+#!/usr/bin/pulseaudio -nF
+#
+# PulseAudio system configuration for Docker container
+# This file configures PulseAudio to run in system mode suitable for containers
+#
+
+# Don't fail if some modules can't load
+.nofail
+
+# Load the native protocol module for local connections
+load-module module-native-protocol-unix auth-anonymous=1 socket=/tmp/pulse-socket
+
+# Load null sink as a dummy audio device (acts as /dev/null for audio)
+load-module module-null-sink sink_name=dummy_output sink_properties=device.description=Dummy_Output
+
+# Load the always-sink module to ensure we always have an audio sink
+load-module module-always-sink
+
+# Automatically restore the volume of streams and devices
+load-module module-stream-restore
+load-module module-device-restore
+
+# Automatically suspend sinks/sources when idle
+load-module module-suspend-on-idle timeout=5
+
+# Make sure we have at least one sink
+load-module module-rescue-streams
+
+# Set default sink and source (use monitor as source since module-null-source has issues)
+set-default-sink dummy_output
+set-default-source dummy_output.monitor
+set-default-sink dummy_output

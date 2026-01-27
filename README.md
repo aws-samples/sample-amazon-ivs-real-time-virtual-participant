@@ -2,12 +2,31 @@
 
 This demo provides a sample implementation for a containerized virtual participant that can join an [Amazon IVS Real-time](https://docs.aws.amazon.com/ivs/latest/RealTimeUserGuide/what-is.html) stage, subscribe to content from other participants in the stage, and publish content to the stage as well. The container consists of a Node.js server context and [Puppeteer](https://github.com/puppeteer/puppeteer) client context that communicate via a WebSocket IPC. The client context uses the IVS Web Broadcast SDK to connect to an IVS Real-time stage.
 
-<img src="docs/images/app-screenshot.png" aria-hidden="true" alt="Preview image." style="display: none;" />
-
-[View full diagram and description](docs/images/vp-arch-overview-description.md).
+<img src="docs/images/app-screenshot.png" alt="Preview image" />
 
 > [!CAUTION]
 > **Use at Your Own Risk**: This is a code sample designed to help developers get started with Amazon IVS. It is not production-ready and will require additional development work to be suitable for production use. It is **not** intended for production use as-is. Its primary goal is to help developers understand the concepts and capabilities of Amazon IVS. By using this solution, you understand and accept its risks and limitations.
+
+## Quick links
+
+### Example virtual participants
+- [Asset Publisher](#stream-pre-recorded-content-to-a-real-time-stage) - Stream pre-recorded media to a stage
+- [Nova S2S](#real-time-conversational-ai-with-amazon-nova-sonic-speech-to-speech) - Conversational AI with Amazon Nova Sonic
+- [GPT Realtime](#real-time-conversational-ai-with-gpt-realtime) - Conversational AI with OpenAI GPT Realtime
+- [Realtime Captioner](#real-time-captioning-with-speech-recognition) - Live transcription and captions
+
+### Documentation sections
+- [Deploy to AWS](#deploying-the-application-to-aws)
+- [VirtualParticipant CLI Commands](#virtualparticipant-cli-commands)
+- [Virtual Participant Configuration](#virtual-participant-configuration)
+- [Sample Implementations](#sample-implementations)
+- [About Amazon IVS](#about-amazon-ivs)
+
+## Architecture overview
+
+<img src="docs/images/vp-arch-overview.png" alt="Architecture diagram" />
+
+[View full diagram and description](docs/images/vp-arch-overview-description.md).
 
 ## Deploying the application to AWS
 
@@ -59,10 +78,11 @@ npm run deploy:delete
 
 If you prefer not to use the interactive CLI tool to deploy the application stack, you may use the `make app` command to initialize and deploy a stack, or the `make deploy` command to re-deploy an existing stack. When using the `make <app|deploy>` command, use the following environment variables to specify the deploy configuration.
 
-- `VP`: Virtual participant type to deploy. One of `asset-publisher`, `nova-s2s`, or `gpt-realtime` (default: `asset-publisher`). _(Optional)_
+- `VP`: Virtual participant type to deploy. One of `asset-publisher`, `nova-s2s`, `gpt-realtime`, `realtime-captioner` (default: `asset-publisher`). _(Optional)_
   - `asset-publisher`: Example asset-based virtual participant that publishes pre-recorded media
   - `nova-s2s`: Example real-time conversational virtual participant with Amazon Nova Sonic
   - `gpt-realtime`: Example real-time conversational virtual participant with gpt-realtime
+  - `realtime-captioner`: Example real-time captioning virtual participant using the Web Speech Recognition API
 - `ENV`: Application environment for stack deployment. One of `dev` or `prod` (default: `dev`). _(Optional)_
 - `STACK`: Stack name (default: `IVSVirtualParticipant-$(ENV)`). _(Optional)_
 - `AWS_PROFILE`: Named AWS CLI profile for stack deployment (default: `default`). _(Optional)_
@@ -324,7 +344,7 @@ Several sample implementations are provided as docker containers in the [virtual
 
 [Diagram description](docs/images/vp-arch-example-vod-stream-description.md).
 
-This sample implementation streams pre-recorded content from an S3 bucket to the real-time stage.
+This sample implementation streams pre-recorded content from an S3 bucket to the real-time stage. Follow the [deploy instructions](#deploying-the-application-to-aws) and select `asset-publisher` to deploy this sample.
 
 ### Real-time conversational AI with Amazon Nova Sonic Speech-to-Speech
 
@@ -332,7 +352,7 @@ This sample implementation streams pre-recorded content from an S3 bucket to the
 
 [Diagram description](docs/images/vp-arch-example-nova-s2s-description.md).
 
-This sample implementation demonstrates a real-time conversational AI persona using Amazon Nova Sonic via Amazon Bedrock. The AI persona can engage in natural voice conversations with stage participants, with customizable voice options and system prompts.
+This sample implementation demonstrates a real-time conversational AI persona using Amazon Nova Sonic via Amazon Bedrock. The AI persona can engage in natural voice conversations with stage participants, with customizable voice options and system prompts. Follow the [deploy instructions](#deploying-the-application-to-aws) and select `nova-s2s` to deploy this sample.
 
 ### Real-time conversational AI with GPT Realtime
 
@@ -340,7 +360,15 @@ This sample implementation demonstrates a real-time conversational AI persona us
 
 [Diagram description](docs/images/vp-arch-example-gpt-realtime-description.md).
 
-This sample implementation demonstrates a real-time conversational AI persona using the GPT realtime API. The AI persona can engage in natural voice conversations with other stage participants, with customizable voice options and system prompts.
+This sample implementation demonstrates a real-time conversational AI persona using the GPT realtime API. The AI persona can engage in natural voice conversations with other stage participants, with customizable voice options and system prompts. Follow the [deploy instructions](#deploying-the-application-to-aws) and select `gpt-realtime` to deploy this sample.
+
+### Real-time captioning with Speech Recognition
+
+<img src="docs/images/vp-arch-example-realtime-captioner.png" alt="AWS architecture diagram" />
+
+[Diagram description](docs/images/vp-arch-example-realtime-captioner-description.md).
+
+This sample implementation demonstrates real-time captioning capabilities using speech recognition. The virtual participant can join a stage, subscribe to audio from other participants, and generate real-time captions/transcriptions of the spoken content. Follow the [deploy instructions](#deploying-the-application-to-aws) and select `realtime-captioner` to deploy this sample.
 
 ## About Amazon IVS
 
