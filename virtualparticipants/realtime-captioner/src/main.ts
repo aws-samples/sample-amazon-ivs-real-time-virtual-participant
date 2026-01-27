@@ -347,7 +347,7 @@ function initializeWebSocket() {
     websocket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        console.info('Received WebSocket message:', message);
+        console.info('Received WebSocket message: %O', message);
 
         // Handle different message types from the server
         switch (message.type) {
