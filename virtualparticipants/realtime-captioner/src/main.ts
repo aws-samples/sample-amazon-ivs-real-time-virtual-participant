@@ -242,7 +242,9 @@ async function handleVpInvitation(vpInfo: VirtualParticipant): Promise<void> {
       await initializationPromise;
     } catch (error) {
       console.warn(
-        `[handleVpInvitation] Previous initialization failed, proceeding with new VP ${vpInfo.id}:`,
+        '[handleVpInvitation] Previous initialization failed, proceeding with new VP',
+        vpInfo.id,
+        ':',
         error
       );
     }
