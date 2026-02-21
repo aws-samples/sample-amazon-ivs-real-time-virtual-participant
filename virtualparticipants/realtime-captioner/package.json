@@ -11,8 +11,8 @@
   "dependencies": {
     "amazon-ivs-web-broadcast": "^1.10.0",
     "jwt-decode": "^4.0.0",
-    "@aws-sdk/client-dynamodb": "^3.709.0",
-    "@aws-sdk/lib-dynamodb": "^3.709.0",
+    "@aws-sdk/client-dynamodb": "^3.995.0",
+    "@aws-sdk/lib-dynamodb": "^3.995.0",
     "aws-embedded-metrics": "^4.2.0",
     "puppeteer-core": "^23.11.1",
     "ws": "^8.18.0"
