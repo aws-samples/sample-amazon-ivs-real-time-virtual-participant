@@ -17,7 +17,7 @@
     "@aws-sdk/util-dynamodb": "^3.651.1",
     "aws-appsync": "^4.1.10",
     "graphql-tag": "^2.12.6",
-    "ws": "^8.18.0"
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.5.5",
